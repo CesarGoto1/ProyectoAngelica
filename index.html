@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modelo Logístico</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Modelo Logístico - Solución Analítica</h1>
+        <form id="logisticForm">
+            <label for="r">Tasa de crecimiento (r):</label>
+            <input type="number" id="r" name="r" step="any" required />
+
+            <label for="K">Capacidad de carga (K):</label>
+            <input type="number" id="K" name="K" step="any" required />
+
+            <label for="P0">Población inicial (P0):</label>
+            <input type="number" id="P0" name="P0" step="any" required />
+
+            <label for="tMax">Tiempo máximo (t):</label>
+            <input type="number" id="tMax" name="tMax" step="any" required />
+
+            <button type="submit">Calcular</button>
+        </form>
+
+        <section id="resultado">
+            <h2>Solución Analítica</h2>
+            <p id="formula"></p>
+            <p id="descripcion"></p>
+        </section>
+        <div class="contenido-principal">
+        <section id="grafico">
+            <h2>Gráfico de la Solución</h2>
+            <canvas id="chart"></canvas>
+        </section>
+        <section id="tabla-datos">
+            <h2>Tabla de Datos</h2>
+            <div id="tabla-container"></div>
+        </section>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
