@@ -1,125 +1,138 @@
-const form = document.getElementById('logisticForm');
+const form = document.getElementById('exponentialForm');
 const formulaEl = document.getElementById('formula');
 const descripcionEl = document.getElementById('descripcion');
 const ctx = document.getElementById('chart').getContext('2d');
 const tablaContainer = document.getElementById('tabla-container');
+const contenidoResultados = document.getElementById('contenido-resultados');
 let chart;
 
 form.addEventListener('submit', function(event) {
     event.preventDefault();
 
     // Obtener valores
-    const r = parseFloat(form.r.value);
-    const K = parseFloat(form.K.value);
+    const k = parseFloat(form.r.value);
     const P0 = parseFloat(form.P0.value);
+    const K = parseFloat(form.K.value);
     const tMax = parseFloat(form.tMax.value);
 
-    if (K <= 0 || r <= 0 || P0 <= 0 || tMax <= 0) {
+    if (k <= 0 || P0 <= 0 || K <= 0 || tMax <= 0) {
         alert('Por favor, ingrese valores positivos mayores que cero.');
         return;
     }
 
-    if (P0 >= K) {
-        alert('La población inicial debe ser menor que la capacidad de carga K.');
-        return;
-    }
+    // Mostrar el contenido de resultados
+    contenidoResultados.style.display = 'block';
 
-    // Calcular la constante C usando las condiciones iniciales
-    // De P(0) = P0, obtenemos: P0 = K / (1 + C)
-    // Despejando C: C = (K - P0) / P0
-    const C = (K - P0) / P0;
+    // Para el modelo exponencial, C = P₀ (condición inicial)
+    const C = P0;
+
+    // ...existing code... (resto del código del formulario sin cambios)
 
     // Mostrar el proceso de resolución paso a paso
     formulaEl.innerHTML = `
         <div style="text-align: left; padding: 20px;">
-            <h3>Resolución de la EDO:</h3>
-            <p><strong>Ecuación diferencial:</strong></p>
-            \\[\\frac{dP}{dt} = kP, \\quad con \\, k > 0\\]
+            <h3>Fórmula de Crecimiento Exponencial:</h3>
+            <p><strong>Fórmula general:</strong></p>
+            \\[P(t) = Ce^{kt}\\]
             
-            <p><strong>Separando variables:</strong></p>
-            \\[\\frac{dP}{P} = k \\, dt\\]
+            <p><strong>Datos dados:</strong></p>
+            <ul style="margin: 15px 0; padding-left: 20px;">
+                <li>P₀ = ${P0} (población inicial)</li>
+                <li>k = ${k} (tasa de crecimiento)</li>
+                <li>K = ${K} (capacidad de carga - para referencia)</li>
+                <li>t = tiempo</li>
+            </ul>
             
-            <p><strong>Integrando ambos lados:</strong></p>
-            \\[\\int \\frac{dP}{P} = \\int k \\, dt\\]
-            \\[\\ln|P| = kt + C_1\\]
+            <p><strong>Paso 1: Encontrando la constante C</strong></p>
+            <p>Usando la condición inicial P(0) = P₀:</p>
+            \\[P(0) = Ce^{k \\cdot 0} = Ce^0 = C \\cdot 1 = C\\]
+            \\[Por\\ tanto:\\ C = P_0 = ${P0}\\]
             
-            <p><strong>Aplicando exponencial:</strong></p>
-            \\[P = e^{kt + C_1} = e^{C_1} \\cdot e^{kt} = C \\cdot e^{kt}\\]
+            <p><strong>Paso 2: Sustituyendo los valores en la fórmula</strong></p>
+            \\[P(t) = ${P0} \\cdot e^{${k}t}\\]
             
-            <p><strong>Con valores dados:</strong></p>
-            \\[k = ${r}, \\quad K = ${K}, \\quad P_0 = ${P0}\\]
-            \\[C = \\frac{K - P_0}{P_0} = \\frac{${K} - ${P0}}{${P0}} = ${C.toFixed(4)}\\]
+            <p><strong>Fórmula final con datos reemplazados:</strong></p>
+            <div style="background: linear-gradient(145deg, #e3f2fd, #bbdefb); padding: 15px; border-radius: 8px; margin: 10px 0; text-align: center;">
+                \\[\\boxed{P(t) = ${P0}e^{${k}t}}\\]
+            </div>
             
-            <p><strong>Solución final:</strong></p>
-            \\[P(t) = \\frac{${K}}{1 + ${C.toFixed(4)} \\cdot e^{-${r}t}}\\]
+            <p><strong>Verificación en t = 0:</strong></p>
+            \\[P(0) = ${P0}e^{${k} \\cdot 0} = ${P0}e^0 = ${P0} \\cdot 1 = ${P0} \\checkmark\\]
         </div>
     `;
 
     // Procesar la fórmula para que MathJax la renderice
     MathJax.typesetPromise();
 
-    // Calcular valores para el gráfico usando la fórmula correcta
-    const puntos = 100;
+    // Calcular valores para el gráfico usando la fórmula exponencial
+    const puntosGrafico = 15;
     const tiempo = [];
     const poblacion = [];
 
-    for (let i = 0; i <= puntos; i++) {
-        const t = (tMax / puntos) * i;
+    for (let i = 0; i <= puntosGrafico; i++) {
+        const t = (tMax / puntosGrafico) * i;
         tiempo.push(parseFloat(t.toFixed(2)));
         
-        // Fórmula logística: P(t) = K / (1 + C * e^(-rt))
-        // donde C = (K - P0) / P0
-        const Pt = K / (1 + C * Math.exp(-r * t));
+        // Fórmula exponencial: P(t) = C * e^(kt) = P₀ * e^(kt)
+        const Pt = C * Math.exp(k * t);
         poblacion.push(parseFloat(Pt.toFixed(2)));
     }
 
+    // Generar colores dinámicos para las barras
+    const maxPoblacion = Math.max(...poblacion);
+    const colores = poblacion.map((valor) => {
+        const intensidad = valor / maxPoblacion;
+        if (intensidad < 0.3) return 'rgba(54, 162, 235, 0.8)'; // Azul para valores bajos
+        else if (intensidad < 0.7) return 'rgba(78, 205, 196, 0.8)'; // Turquesa para valores medios
+        else return 'rgba(255, 107, 107, 0.8)'; // Coral para valores altos
+    });
+
     descripcionEl.innerHTML = `
         <div style="background: linear-gradient(145deg, #e8f5e8, #d4f4d4); padding: 15px; border-radius: 8px; margin: 15px 0;">
-            <strong>Análisis del modelo:</strong><br>
-            • Tasa de crecimiento: r = ${r}<br>
-            • Capacidad de carga: K = ${K}<br>
-            • Población inicial: P₀ = ${P0}<br>
-            • Constante de integración: C = ${C.toFixed(4)}<br>
-            • Tiempo de análisis: 0 ≤ t ≤ ${tMax}<br><br>
-            <em>La población evoluciona según el modelo logístico, tendiendo asintóticamente hacia la capacidad de carga K = ${K}.</em>
+            <strong>Análisis del modelo exponencial:</strong><br>
+            • Fórmula: P(t) = Ce^(kt)<br>
+            • Tasa de crecimiento: k = ${k}<br>
+            • Población inicial: P₀ = C = ${P0}<br>
+            • Capacidad de carga (referencia): K = ${K}<br>
+            • Tiempo de análisis: 0 ≤ t ≤ ${tMax}<br>
+            • Población al tiempo máximo: P(${tMax}) = ${poblacion[poblacion.length-1].toLocaleString()}<br><br>
+            <em>La población crece exponencialmente sin límite según la fórmula P(t) = ${P0}e^{${k}t}.</em><br>
         </div>
     `;
 
-    // Generar tabla de datos con más precisión
+    // Generar tabla de datos usando la fórmula exponencial
+    const puntosTabla = 100;
+    const tiempoTabla = [];
+    const poblacionTabla = [];
+    
+    for (let i = 0; i <= puntosTabla; i++) {
+        const t = (tMax / puntosTabla) * i;
+        tiempoTabla.push(parseFloat(t.toFixed(2)));
+        const Pt = C * Math.exp(k * t);
+        poblacionTabla.push(parseFloat(Pt.toFixed(2)));
+    }
+
     let tablaHTML = `
         <table>
             <thead>
                 <tr>
                     <th>Tiempo (t)</th>
-                    <th>Población P(t)</th>
-                    <th>% de K</th>
+                    <th>P(t) = ${P0}e^(${k}t)</th>
+                    <th>Factor de Crecimiento</th>
                 </tr>
             </thead>
             <tbody>
     `;
     
-    // Mostrar solo algunos puntos clave en la tabla para mejor legibilidad
-    const step = Math.max(1, Math.floor(puntos / 20)); // Mostrar aprox. 20 puntos
-    for (let i = 0; i < tiempo.length; i += step) {
-        const porcentajeK = ((poblacion[i] / K) * 100).toFixed(1);
+    // Mostrar solo algunos puntos clave en la tabla
+    const stepTabla = Math.max(1, Math.floor(puntosTabla / 20));
+    for (let i = 0; i < tiempoTabla.length; i += stepTabla) {
+        const factorCrecimiento = (poblacionTabla[i] / P0).toFixed(2);
         tablaHTML += `
             <tr>
-                <td>${tiempo[i]}</td>
-                <td>${poblacion[i]}</td>
-                <td>${porcentajeK}%</td>
-            </tr>
-        `;
-    }
-    
-    // Asegurar que el último punto se incluya
-    if ((tiempo.length - 1) % step !== 0) {
-        const lastIndex = tiempo.length - 1;
-        const porcentajeK = ((poblacion[lastIndex] / K) * 100).toFixed(1);
-        tablaHTML += `
-            <tr>
-                <td>${tiempo[lastIndex]}</td>
-                <td>${poblacion[lastIndex]}</td>
-                <td>${porcentajeK}%</td>
+                <td>${tiempoTabla[i]}</td>
+                <td>${poblacionTabla[i].toLocaleString()}</td>
+                <td>${factorCrecimiento}x</td>
             </tr>
         `;
     }
@@ -131,57 +144,61 @@ form.addEventListener('submit', function(event) {
     
     tablaContainer.innerHTML = tablaHTML;
 
-    // Graficar con colores mejorados
+    // Crear gráfico con pocas barras y bien separadas
     if (chart) {
         chart.destroy();
     }
 
     chart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: tiempo,
             datasets: [{
-                label: 'Población P(t)',
+                label: `P(t) = ${P0}e^(${k}t)`,
                 data: poblacion,
-                borderColor: '#FF6B6B',
-                backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                fill: true,
-                tension: 0.4,
-                borderWidth: 3,
-                pointBackgroundColor: '#FF6B6B',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: 2,
-                pointHoverRadius: 6
+                backgroundColor: colores,
+                borderColor: colores.map(color => color.replace('0.8', '1')),
+                borderWidth: 2,
+                borderRadius: 6,
+                borderSkipped: false,
+                barPercentage: 0.6,
+                categoryPercentage: 0.7,
             }, {
-                label: `Capacidad de carga K = ${K}`,
+                label: `Capacidad de carga K = ${K} (referencia)`,
                 data: new Array(tiempo.length).fill(K),
-                borderColor: '#4ECDC4',
+                type: 'line',
+                borderColor: '#e74c3c',
                 backgroundColor: 'transparent',
                 borderDash: [10, 5],
-                borderWidth: 2,
+                borderWidth: 3,
                 pointRadius: 0,
-                pointHoverRadius: 0
+                pointHoverRadius: 0,
+                fill: false,
+                order: 0
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
+                    position: 'top',
                     labels: {
                         color: '#34495e',
                         font: {
                             size: 14,
                             weight: 'bold'
-                        }
+                        },
+                        usePointStyle: true,
+                        padding: 20
                     }
                 },
                 tooltip: {
                     callbacks: {
                         afterLabel: function(context) {
                             if (context.datasetIndex === 0) {
-                                const porcentaje = ((context.parsed.y / K) * 100).toFixed(1);
-                                return `${porcentaje}% de la capacidad de carga`;
+                                const factorCrecimiento = (context.parsed.y / P0).toFixed(2);
+                                return `Factor de crecimiento: ${factorCrecimiento}x`;
                             }
                             return '';
                         }
@@ -200,10 +217,15 @@ form.addEventListener('submit', function(event) {
                         }
                     },
                     grid: {
+                        display: true,
                         color: 'rgba(0, 0, 0, 0.1)'
                     },
                     ticks: {
-                        color: '#495057'
+                        color: '#495057',
+                        maxRotation: 0,
+                        font: {
+                            size: 12
+                        }
                     }
                 },
                 y: {
@@ -218,12 +240,20 @@ form.addEventListener('submit', function(event) {
                     },
                     beginAtZero: true,
                     grid: {
+                        display: true,
                         color: 'rgba(0, 0, 0, 0.1)'
                     },
                     ticks: {
-                        color: '#495057'
+                        color: '#495057',
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
                     }
                 }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
